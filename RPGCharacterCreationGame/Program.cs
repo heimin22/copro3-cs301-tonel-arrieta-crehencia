@@ -58,7 +58,7 @@ namespace RPGCharacterCreationGame
         void DeleteCharacter();
     }
     // dito para sa account ng user to
-    
+
 
     public class CharacterManager : IDatabaseActions
     {
@@ -94,13 +94,13 @@ namespace RPGCharacterCreationGame
                     }
                 }
             }
-            catch (Exception e) 
+            catch (Exception e)
             {
                 Console.WriteLine(e.Message.ToString());
             }
         }
         public void SavingCharacter(Character character, string[] attributeNames)
-        { 
+        {
             try
             {
                 using (SqlConnection connection = new SqlConnection(databaseConnectionString))
@@ -118,7 +118,7 @@ namespace RPGCharacterCreationGame
                         "@characterRace, @characterClass, @characterKeepsakes, @characterSTR, @characterDEX, @characterCON, @characterINT, @characterWIS, @characterCHA, @characterAGI, " +
                         "@characterVIT, @characterPER, @characterLUK, @characterWIL, @characterFOR, @characterARC, @characterTEC, @characterSTL)";
 
-                    using (SqlCommand command = new SqlCommand(insertQuery, connection)) 
+                    using (SqlCommand command = new SqlCommand(insertQuery, connection))
                     {
                         command.Parameters.AddWithValue("@characterName", character.name);
                         command.Parameters.AddWithValue("@characterGender", character.gender);
@@ -152,11 +152,11 @@ namespace RPGCharacterCreationGame
 
                         command.ExecuteNonQuery();
 
-                        
+
                     }
                 }
             }
-            catch (Exception e) 
+            catch (Exception e)
             {
                 Console.WriteLine(e.Message.ToString());
             }
@@ -170,13 +170,138 @@ namespace RPGCharacterCreationGame
                 int characterNumber = int.Parse(Console.ReadLine());
 
                 string characterName = GetCharacterNameByNumber(characterNumber);
+
+                if (characterName != null)
+                {
+                    Console.WriteLine($"\nLoading character: {characterName}");
+
+                    // Retrieve the character details from the database using characterName
+                    Character loadedCharacter = RetrieveCharacterDetails(characterName);
+
+                    // Call the GetCharacterForEditing method to edit the loaded character
+                    GetCharacterForEditing(loadedCharacter);
+                }
+                else
+                {
+                    Console.WriteLine("Invalid character number. Please try again.");
+                }
             }
-            catch (Exception e) 
+            catch (Exception e)
             {
                 Console.WriteLine($"{e.Message}");
-                    
             }
         }
+
+
+        private void GetCharacterForEditing(Character loadedCharacter)
+        {
+            try
+            {
+                // Use the provided loadedCharacter or create a new one
+                Character character = loadedCharacter.Equals(default(Character)) ? new Character() : loadedCharacter;
+
+                Program programInstance = new Program();
+
+                Console.WriteLine("\nEditing Character Details:");
+                character.gender = Program.GetGender();
+                character.hairStyle = Program.GetHairStyle(character.gender);
+                character.facialHair = Program.GetFacialHair();
+                character.hairColor = Program.GetHairColor();
+                character.skinColor = Program.GetSkinColor();
+                character.tattoos = Program.GetTattoos();
+                character.markings = Program.GetOtherMarkings();
+                character.ageGroup = Program.GetCharacterAge();
+                character.eyeColor = Program.GetEyeColor();
+                character.height = Program.GetCharacterHeight();
+                character.width = Program.GetBodyWidth();
+                character.accessories = Program.GetAccessories();
+                character.upperBodyClothing = Program.GetUpperBodyClothing();
+                character.upperBodyClothingStyleOptions = Program.GetUpperBodyStyleOptions();
+                character.lowerBodyClothing = Program.GetLowerBodyClothing();
+                character.lowerBodyClothingStyleOptions = Program.GetLowerBodyStyleOptions();
+                character.footwear = Program.GetFootwear();
+                character.characterRace = Program.GetCharacterRace();
+                character.characterClass = Program.GetCharacterClass();
+                character.keepsakes = Program.GetKeepsakes();
+                // attributes are already set during loading
+
+                // Save the edited character details
+                string[] attributeNames = { "STR", "DEX", "CON", "INT", "WIS", "CHA", "AGI", "VIT", "PER", "LUK", "WIL", "FOR", "ARC", "TEC", "STL" };
+                SavingCharacter(character, attributeNames);
+
+                programInstance.DisplayCharacterSummary(character);
+                Environment.Exit(0);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message.ToString());
+            }
+        }
+   
+        private Character RetrieveCharacterDetails(string characterName)
+        {
+            Character character = new Character();
+
+            string[] attributeNames = { "STR", "DEX", "CON", "INT", "WIS", "CHA", "AGI", "VIT", "PER", "LUK", "WIL", "FOR", "ARC", "TEC", "STL" };
+
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(databaseConnectionString))
+                {
+                    connection.Open();
+
+                    string selectQuery = "SELECT * FROM CharacterTable WHERE characterName = @characterName";
+
+                    using (SqlCommand command = new SqlCommand(selectQuery, connection))
+                    {
+                        command.Parameters.AddWithValue("@characterName", characterName);
+
+                        using (SqlDataReader reader = command.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                character.name = reader["characterName"].ToString();
+                                character.gender = reader["characterGender"].ToString();
+                                character.hairStyle = reader["characterHairStyle"].ToString();
+                                character.facialHair = reader["characterFacialHair"].ToString();
+                                character.hairColor = reader["characterHairColor"].ToString();
+                                character.skinColor = reader["characterSkinColor"].ToString();
+                                character.tattoos = reader["characterTattoos"].ToString();
+                                character.markings = reader["characterMarkings"].ToString();
+                                character.ageGroup = reader["characterAge"].ToString();
+                                character.eyeColor = reader["characterEyeColor"].ToString();
+                                character.height = reader["characterHeight"].ToString();
+                                character.width = reader["characterWidth"].ToString();
+                                character.accessories = reader["characterAccessories"].ToString();
+                                character.upperBodyClothing = reader["characterUpperBodyC"].ToString();
+                                character.upperBodyClothingStyleOptions = reader["characterUBStyle"].ToString();
+                                character.lowerBodyClothing = reader["characterLowerBodyC"].ToString();
+                                character.lowerBodyClothingStyleOptions = reader["characterLBSTyle"].ToString();
+                                character.footwear = reader["characterFootwear"].ToString();
+                                character.characterRace = reader["characterRace"].ToString();
+                                character.characterClass = reader["characterClass"].ToString();
+                                character.keepsakes = reader["characterKeepsakes"].ToString();
+
+                                // Retrieve attributes
+                                int[] attributes = new int[15];
+                                for (int i = 0; i < attributes.Length; i++)
+                                {
+                                    attributes[i] = Convert.ToInt32(reader[$"character{attributeNames[i]}"]);
+                                }
+                                character.attributes = attributes;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message.ToString());
+            }
+
+            return character;
+        }
+
 
         private string GetCharacterNameByNumber(int characterNumber)
         {
