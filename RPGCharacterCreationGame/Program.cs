@@ -56,6 +56,7 @@ namespace RPGCharacterCreationGame
         void DisplayCharacterList();
         void DeleteAllCharacters();
         void DeleteCharacter();
+
     }
     // dito para sa account ng user to
 
@@ -84,6 +85,22 @@ namespace RPGCharacterCreationGame
                             break;
                         case 3:
                             DisplayCharacterList();
+
+                            Console.WriteLine("\n1. Delete a specific character\n2. Delete all chaarcters");
+                            int delChoice = int.Parse(Console.ReadLine());
+
+                            switch (delChoice)
+                            {
+                                case 1:
+                                    DeleteCharacter();
+                                    break;
+                                case 2:
+                                    DeleteAllCharacters();
+                                    break;
+                                default:
+                                    Console.WriteLine("Invalid choice. Please try again.");
+                                    break;
+                            }
                             break;
                         case 4:
                             Environment.Exit(0);
@@ -223,11 +240,12 @@ namespace RPGCharacterCreationGame
                 character.characterRace = Program.GetCharacterRace();
                 character.characterClass = Program.GetCharacterClass();
                 character.keepsakes = Program.GetKeepsakes();
+                character.attributes = Program.GetAttributeAllocation();
                 // attributes are already set during loading
 
                 // Save the edited character details
                 string[] attributeNames = { "STR", "DEX", "CON", "INT", "WIS", "CHA", "AGI", "VIT", "PER", "LUK", "WIL", "FOR", "ARC", "TEC", "STL" };
-                SavingCharacter(character, attributeNames);
+                UpdateCharacter(character, attributeNames);
 
                 programInstance.DisplayCharacterSummary(character);
                 Environment.Exit(0);
@@ -237,7 +255,75 @@ namespace RPGCharacterCreationGame
                 Console.WriteLine(e.Message.ToString());
             }
         }
-   
+        
+        public void UpdateCharacter(Character updatedCharacter, string[] attributeNames)
+        {
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(databaseConnectionString))
+                {
+                    connection.Open();
+
+                    // Update query for the CharacterTable
+                    string updateQuery = "UPDATE CharacterTable SET " +
+                        "characterGender = @characterGender, characterHairStyle = @characterHairStyle, " +
+                        "characterFacialHair = @characterFacialHair, characterHairColor = @characterHairColor, " +
+                        "characterSkinColor = @characterSkinColor, characterTattoos = @characterTattoos, " +
+                        "characterMarkings = @characterMarkings, characterAge = @characterAge, " +
+                        "characterEyeColor = @characterEyeColor, characterHeight = @characterHeight, " +
+                        "characterWidth = @characterWidth, characterAccessories = @characterAccessories, " +
+                        "characterUpperBodyC = @characterUpperBodyC, characterUBStyle = @characterUBStyle, " +
+                        "characterLowerBodyC = @characterLowerBodyC, characterLBSTyle = @characterLBSTyle, " +
+                        "characterFootwear = @characterFootwear, characterRace = @characterRace, " +
+                        "characterClass = @characterClass, characterKeepsakes = @characterKeepsakes, " +
+                        "characterSTR = @characterSTR, characterDEX = @characterDEX, characterCON = @characterCON, " +
+                        "characterINT = @characterINT, characterWIS = @characterWIS, characterCHA = @characterCHA, " +
+                        "characterAGI = @characterAGI, characterVIT = @characterVIT, characterPER = @characterPER, " +
+                        "characterLUK = @characterLUK, characterWIL = @characterWIL, characterFOR = @characterFOR, " +
+                        "characterARC = @characterARC, characterTEC = @characterTEC, characterSTL = @characterSTL " +
+                        "WHERE characterName = @characterName";
+
+                    using (SqlCommand command = new SqlCommand(updateQuery, connection)) 
+                    {
+                        // Add parameters for updating character details
+                        command.Parameters.AddWithValue("@characterName", updatedCharacter.name);
+                        command.Parameters.AddWithValue("@characterGender", updatedCharacter.gender);
+                        command.Parameters.AddWithValue("@characterHairStyle", updatedCharacter.hairStyle);
+                        command.Parameters.AddWithValue("@characterFacialHair", updatedCharacter.facialHair);
+                        command.Parameters.AddWithValue("@characterHairColor", updatedCharacter.hairColor);
+                        command.Parameters.AddWithValue("@characterSkinColor", updatedCharacter.skinColor);
+                        command.Parameters.AddWithValue("@characterTattoos", updatedCharacter.tattoos);
+                        command.Parameters.AddWithValue("@characterMarkings", updatedCharacter.markings);
+                        command.Parameters.AddWithValue("@characterAge", updatedCharacter.ageGroup);
+                        command.Parameters.AddWithValue("@characterEyeColor", updatedCharacter.eyeColor);
+                        command.Parameters.AddWithValue("@characterHeight", updatedCharacter.height);
+                        command.Parameters.AddWithValue("@characterWidth", updatedCharacter.width);
+                        command.Parameters.AddWithValue("@characterAccessories", updatedCharacter.accessories);
+                        command.Parameters.AddWithValue("@characterUpperBodyC", updatedCharacter.upperBodyClothing);
+                        command.Parameters.AddWithValue("@characterUBStyle", updatedCharacter.upperBodyClothingStyleOptions);
+                        command.Parameters.AddWithValue("@characterLowerBodyC", updatedCharacter.lowerBodyClothing);
+                        command.Parameters.AddWithValue("@characterLBSTyle", updatedCharacter.lowerBodyClothingStyleOptions);
+                        command.Parameters.AddWithValue("@characterFootwear", updatedCharacter.footwear);
+                        command.Parameters.AddWithValue("@characterRace", updatedCharacter.characterRace);
+                        command.Parameters.AddWithValue("@characterClass", updatedCharacter.characterClass);
+                        command.Parameters.AddWithValue("@characterKeepsakes", updatedCharacter.keepsakes);
+
+                        // Add parameters for updating attributes
+                        for (int i = 0; i < attributeNames.Length; i++)
+                        {
+                            command.Parameters.AddWithValue($"@character{attributeNames[i]}", updatedCharacter.attributes[i]);
+                        }
+
+                        command.ExecuteNonQuery();
+                    }
+                }
+            }
+            catch (Exception e) 
+            {
+                Console.WriteLine($"{e.Message}");
+            }
+        }
+
         private Character RetrieveCharacterDetails(string characterName)
         {
             Character character = new Character();
@@ -376,12 +462,51 @@ namespace RPGCharacterCreationGame
 
         public void DeleteAllCharacters()
         {
-            // Implement deleting all characters logic here
+           try
+           {
+
+           }
+           catch (Exception e) 
+           {
+
+           }
         }
 
         public void DeleteCharacter()
         {
-            // Implement deleting character logic here
+            try
+            {
+                Console.Write("Enter the number of the character you want to delete: ");
+                int characterNumber = int.Parse(Console.ReadLine());
+
+                string characterName = GetCharacterNameByNumber(characterNumber);
+
+                if (characterName != null)
+                {
+                    using (SqlConnection connection = new SqlConnection(databaseConnectionString))
+                    {
+                        connection.Open();
+
+                        string deleteQuery = "DELETE FROM CharacterTable WHERE characterName = @characterName";
+
+                        using (SqlCommand command = new SqlCommand(deleteQuery, connection))
+                        {
+                            command.Parameters.AddWithValue("@characterName", characterName);
+                            command.ExecuteNonQuery();
+
+                            Console.WriteLine($"Character '{characterName}' deleted successfully.");
+                        }
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Character not found. Please enter a valid character number.");
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"{e.Message}");
+            }
         }
     }
 
