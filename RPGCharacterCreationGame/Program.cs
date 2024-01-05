@@ -169,89 +169,73 @@ namespace RPGCharacterCreationGame
         public void SetPassword(string newPassword)
         {
             // otids naman yung sa pag-eeencrypt ng password ng user gamit yung hashing logic
-            Password = HashPassword(newPassword);
+            Password = newPassword;
             SavePasswordToDatabase();
         }
 
-        private string GetHashedPasswordFromDatabase()
-        { 
-            string databaseConnectionString = @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=D:\HANDOUTS\COMPUTER PROGRAMMING 1\RPGCHARACTERCREATIONGAME\RPGCHARACTERCREATIONGAME\CHARACTERCREATIONDATABASE.MDF;Integrated Security=True;Connect Timeout=30";
-
-            using (SqlConnection connection = new SqlConnection(databaseConnectionString)) 
+        private string GetPasswordFromDatabase()
+        {
+            try
             {
-                connection.Open();
+                string databaseConnectionString = @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=D:\HANDOUTS\COMPUTER PROGRAMMING 1\RPGCHARACTERCREATIONGAME\RPGCHARACTERCREATIONGAME\CHARACTERCREATIONDATABASE.MDF;Integrated Security=True;Connect Timeout=30";
 
-                string selectQuery = "SELECT password FROM UsersTable WHERE username = @username";
-
-                using (SqlCommand command = new SqlCommand(selectQuery, connection)) 
+                using (SqlConnection connection = new SqlConnection(databaseConnectionString))
                 {
-                    command.Parameters.AddWithValue("@username", Username);
-                    
-                    using (SqlDataReader reader = command.ExecuteReader()) 
+                    connection.Open();
+
+                    string selectQuery = "SELECT password FROM UsersTable WHERE username = @username";
+
+                    using (SqlCommand command = new SqlCommand(selectQuery, connection))
                     {
-                        if (reader.Read()) 
+                        command.Parameters.AddWithValue("@username", Username);
+
+                        using (SqlDataReader reader = command.ExecuteReader())
                         {
-                            return reader["password"].ToString();
+                            if (reader.Read())
+                            {
+                                return reader["password"].ToString();
+                            }
                         }
                     }
                 }
             }
-
+            catch (Exception e) 
+            {
+                Console.WriteLine(e.Message.ToString()); 
+                return null;
+            }
             return null;
         }
 
         private void SavePasswordToDatabase() 
         {
-            string databaseConnectionString = @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=D:\HANDOUTS\COMPUTER PROGRAMMING 1\RPGCHARACTERCREATIONGAME\RPGCHARACTERCREATIONGAME\CHARACTERCREATIONDATABASE.MDF;Integrated Security=True;Connect Timeout=30";
-
-            using (SqlConnection connection = new SqlConnection(databaseConnectionString)) 
+            try
             {
-                connection.Open();
+                string databaseConnectionString = @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=D:\HANDOUTS\COMPUTER PROGRAMMING 1\RPGCHARACTERCREATIONGAME\RPGCHARACTERCREATIONGAME\CHARACTERCREATIONDATABASE.MDF;Integrated Security=True;Connect Timeout=30";
 
-                string updateQuery = "UPDATE UsersTable SET password = @password WHERE username = @username";
-
-                using (SqlCommand command = new SqlCommand(updateQuery, connection))
+                using (SqlConnection connection = new SqlConnection(databaseConnectionString))
                 {
-                    command.Parameters.AddWithValue("@password", Password);
-                    command.Parameters.AddWithValue("username", Username);
+                    connection.Open();
 
-                    command.ExecuteNonQuery();
+                    string updateQuery = "UPDATE UsersTable SET password = @password WHERE username = @username";
+
+                    using (SqlCommand command = new SqlCommand(updateQuery, connection))
+                    {
+                        command.Parameters.AddWithValue("@password", Password);
+                        command.Parameters.AddWithValue("username", Username);
+
+                        command.ExecuteNonQuery();
+                    }
                 }
             }
-        }
-
-        public bool VerifyHashedPassword(string inputPassword, string hashedPassword)
-        {
-            // dito naman bai yung password decryption gamit yung hashing verification logic
-            return HashPassword(inputPassword) == hashedPassword;
-        }
-
-        // ito yung method bai na i-eencrypt yung password gamit yung hashing logic na SHA256
-        private string HashPassword(string Password)
-        {
-            // ginamit ko bai yung "using" statement para ma-ensure ko na yung SHA256 is madispose ko after magamit
-            using (SHA256 sha256 = SHA256.Create())
+            catch (Exception e)
             {
-                // dito naman icocompute yung hash ng password para maging array or set ng bytes bai
-                byte[] hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(Password));
-
-                // tapos dito naman na i-coconvert bai yung hashed bytes as string gamit yung StringBuilder
-                StringBuilder builder = new StringBuilder();
-                // tapos bai mag-iiterate siya or babasahin niya bawat letter duon sa hashedBytes array
-                for (int i = 0; i < hashedBytes.Length; i++)
-                {
-                    // tapos babaguhin into hexadecimal representation bawat byte duon sa StringBuilder
-                    builder.Append(hashedBytes[i].ToString("x2"));
-                }
-
-                // return yung final hashed password as a string
-                return builder.ToString();
+                Console.WriteLine(e.Message.ToString());
             }
         }
-
-        internal bool VerifyPassword(string password)
+        public bool VerifyPassword(string inputPassword)
         {
-            throw new NotImplementedException();
+            return Password == inputPassword;
         }
     }
     // dito yung class kapag mamimili if gagawa ng account or log-in o kaya exit
@@ -263,74 +247,99 @@ namespace RPGCharacterCreationGame
 
         public static void LogSign()
         {
-            while (true)
+            try
             {
-                Console.WriteLine("\n1. Log-in\n2. Sign Up\n3. Exit");
-                Console.Write("Choose an option: ");
-                int choice = int.Parse(Console.ReadLine());
-
-                switch (choice)
+                while (true)
                 {
-                    case 1:
-                        if (UserLogin())
-                        {
-                            Console.WriteLine("Login Successful!");
-                            Program.GetCharacter();
-                        }
-                        else
-                        {
-                            Console.WriteLine("Login failed. Please try again.");
-                        }
-                        break;
+                    Console.WriteLine("\n1. Log-in\n2. Sign Up\n3. Exit");
+                    Console.Write("Choose an option: ");
+                    int choice = int.Parse(Console.ReadLine());
 
-                    case 2:
-                        UserSignUp();
-                        break;
+                    switch (choice)
+                    {
+                        case 1:
+                            if (UserLogin())
+                            {
+                                Console.WriteLine("Login Successful!");
+                                Program.GetCharacter();
+                            }
+                            else
+                            {
+                                Console.WriteLine("Login failed. Please try again.");
+                            }
+                            break;
 
-                    case 3:
-                        Environment.Exit(0);
-                        break;
+                        case 2:
+                            UserSignUp();
+                            break;
 
-                    default:
-                        Console.WriteLine("Invalid choice. Please try again.");
-                        break;
+                        case 3:
+                            Environment.Exit(0);
+                            break;
+
+                        default:
+                            Console.WriteLine("Invalid choice. Please try again.");
+                            break;
+                    }
                 }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message.ToString());
+                LogSign();
             }
         }
 
         private static bool UserLogin()
         {
-            Console.Write("Enter your username: ");
-            string username = Console.ReadLine();
-
-            Console.Write("Enter your password: ");
-            string password = Console.ReadLine();
-
-            User user = users.Find(u => u.Username == username);
-
-            if (user != null && user.VerifyPassword(password))
+            try
             {
-                currentUser = user;
-                return true;
-            }
+                Console.Write("Enter your username: ");
+                string username = Console.ReadLine();
 
-            return false;
+                Console.Write("Enter your password: ");
+                string password = Console.ReadLine();
+
+                User user = users.Find(u => u.Username == username);
+
+                if (user != null && user.VerifyPassword(password))
+                {
+                    currentUser = user;
+                    return true;
+                }
+
+                return false;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message.ToString());
+                LogSign();
+                return false;
+            }
         }
 
         private static void UserSignUp()
         {
-            Console.Write("Create a username: ");
-            string username = Console.ReadLine();
+            try
+            {
+                Console.Write("Create a username: ");
+                string username = Console.ReadLine();
 
-            Console.Write("Create a password: ");
-            string password = Console.ReadLine();
+                Console.Write("Create a password: ");
+                string password = Console.ReadLine();
 
-            // dito na yan bai isisign-up gamit yung UserAccount class
-            UserAccount userAcc = new UserAccount();
-            userAcc.SignUp(username, password);
-            // dito na maglolog-in after ng sign-up
-            userAcc.Login(username, password);
-            Program.GetCharacter();
+                // dito na yan bai isisign-up gamit yung UserAccount class
+                UserAccount userAcc = new UserAccount();
+                userAcc.SignUp(username, password);
+                // dito na maglolog-in after ng sign-up
+                userAcc.Login(username, password);
+                Program.GetCharacter();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message.ToString());
+                LogSign();
+            }
         }
 
     }
