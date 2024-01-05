@@ -50,8 +50,7 @@ namespace RPGCharacterCreationGame
     // ito naman yung sa interfaces bai, yung dito naman is about yung mga method na kung saan gagamitin sa 100% about sa database
     public interface IDatabaseActions
     {
-        void SavingCharacter();
-        void RetrieveCharacters();
+        void SavingCharacter(Character character);
         void LoadingCharacter();
         void DisplayCharacterList();
         void DeleteAllCharacters();
@@ -79,10 +78,10 @@ namespace RPGCharacterCreationGame
                             Program.GetCharacter();
                             break;
                         case 2:
-                            RetrieveCharacters();
+                            DisplayCharacterList();
                             break;
                         case 3:
-                            RetrieveCharacters();
+                            DisplayCharacterList();
                             break;
                         case 4:
                             Environment.Exit(0);
@@ -98,14 +97,58 @@ namespace RPGCharacterCreationGame
                 Console.WriteLine(e.Message.ToString());
             }
         }
-        public void SavingCharacter()
-        {
-            // Implement saving character logic here
-        }
+        public void SavingCharacter(Character character)
+        { 
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(databaseConnectionString))
+                {
+                    connection.Open();
 
-        public void RetrieveCharacters()
-        {
-            // Implement retrieving characters logic here
+                    string insertQuery = "INSERT INTO CharacterTable" +
+                        "(characterName, characterGender, characterHairStyle, characterFacialHair, characterHairColor, characterSkinColor, characterTattoos, characterMarkings, characterAge, characterEyeColor, characterHeight, characterWidth, " +
+                        "characterAccessories, characterUpperBodyC, characterUBStyle, characterLowerBodyC, characterLBSTyle, characterFootwear, " +
+                        "characterRace, characterClass, characterKeepsakes, characterSTR, characterDEX, characterCON, characterINT, characterWIS, characterCHA, characterAGI, " +
+                        "characterVIT, characterPER, characterLUK, characterWIL, characterFOR, characterARC, characterTEC, characterSTL)" +
+                        "VALUES " +
+                        "(@characterName, @characterGender, @characterHairStyle, @characterFacialHair, @characterHairColor, @characterSkinColor, @characterTattoos, @characterMarkings, @characterAge, @characterEyeColor, @characterHeight, @characterWidth, " +
+                        "@characterAccessories, @characterUpperBodyC, @characterUBStyle, @characterLowerBodyC, @characterLBSTyle, @characterFootwear, " +
+                        "@characterRace, @characterClass, @characterKeepsakes, @characterSTR, @characterDEX, @characterCON, @characterINT, @characterWIS, @characterCHA, @characterAGI, " +
+                        "@characterVIT, @characterPER, @characterLUK, @characterWIL, @characterFOR, @characterARC, @characterTEC, @characterSTL)";
+
+                    using (SqlCommand command = new SqlCommand(insertQuery, connection)) 
+                    {
+                        command.Parameters.AddWithValue("@characterName", character.name);
+                        command.Parameters.AddWithValue("@characterGender", character.gender);
+                        command.Parameters.AddWithValue("@characterHairStyle", character.hairStyle);
+                        command.Parameters.AddWithValue("@characterFacialHair", character.facialHair);
+                        command.Parameters.AddWithValue("@characterHairColor", character.hairColor);
+                        command.Parameters.AddWithValue("@characterSkinColor", character.skinColor);
+                        command.Parameters.AddWithValue("@characterTattoos", character.tattoos);
+                        command.Parameters.AddWithValue("@characterMarkings", character.markings);
+                        command.Parameters.AddWithValue("@characterAge", character.ageGroup);
+                        command.Parameters.AddWithValue("@characterEyeColor", character.eyeColor);
+                        command.Parameters.AddWithValue("@characterHeight", character.height);
+                        command.Parameters.AddWithValue("@characterWidth", character.width);
+                        command.Parameters.AddWithValue("@characterAccessories", character.accessories);
+                        command.Parameters.AddWithValue("@characterUpperBodyC", character.upperBodyClothing);
+                        command.Parameters.AddWithValue("@characterUBStyle", character.upperBodyClothingStyleOptions);
+                        command.Parameters.AddWithValue("@characterLowerBodyC", character.lowerBodyClothing);
+                        command.Parameters.AddWithValue("@characterLBStyle", character.lowerBodyClothingStyleOptions);
+                        command.Parameters.AddWithValue("@characterFootwear", character.footwear);
+                        command.Parameters.AddWithValue("@characterRace", character.characterRace);
+                        command.Parameters.AddWithValue("@characterClass", character.characterClass);
+                        command.Parameters.AddWithValue("@characterKeepsakes", character.keepsakes);
+
+
+                        
+                    }
+                }
+            }
+            catch (Exception e) 
+            {
+                Console.WriteLine(e.Message.ToString());
+            }
         }
 
         public void LoadingCharacter()
@@ -115,7 +158,34 @@ namespace RPGCharacterCreationGame
 
         public void DisplayCharacterList()
         {
-            // Implement displaying character list logic here
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(databaseConnectionString))
+                {
+                    connection.Open();
+
+                    string selectQuery = "SELECT characterName FROM CharacterTable";
+
+                    using (SqlCommand command = new SqlCommand(selectQuery, connection))
+                    {
+                        using (SqlDataReader reader = command.ExecuteReader())
+                        {
+                            int index = 1;
+
+                            while (reader.Read())
+                            {
+                                string characterName = reader["characterName"].ToString();
+                                Console.WriteLine($"{(index)}. {characterName}");
+                                index++;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message.ToString());
+            }
         }
 
         public void DeleteAllCharacters()
@@ -175,7 +245,9 @@ namespace RPGCharacterCreationGame
             character.name = GetName();
             character.characterID = GenerateCharacterID();
 
-            SaveCharacterToDatabase(character);
+            CharacterManager characterManager = new CharacterManager();
+            characterManager.SavingCharacter(character);
+            
 
             program.DisplayCharacterSummary(character);
             Environment.Exit(0);
