@@ -80,6 +80,7 @@ namespace RPGCharacterCreationGame
                             break;
                         case 2:
                             DisplayCharacterList();
+                            LoadingCharacter();
                             break;
                         case 3:
                             DisplayCharacterList();
@@ -163,8 +164,57 @@ namespace RPGCharacterCreationGame
 
         public void LoadingCharacter()
         {
-            // Implement loading character logic here
+            try
+            {
+                Console.Write("Enter the number of the character you want to load: ");
+                int characterNumber = int.Parse(Console.ReadLine());
+
+                string characterName = GetCharacterNameByNumber(characterNumber);
+            }
+            catch (Exception e) 
+            {
+                Console.WriteLine($"{e.Message}");
+                    
+            }
         }
+
+        private string GetCharacterNameByNumber(int characterNumber)
+        {
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(databaseConnectionString))
+                {
+                    connection.Open();
+
+                    string selectQuery = "SELECT characterName FROM CharacterTable";
+
+                    using (SqlCommand command = new SqlCommand(selectQuery, connection))
+                    {
+                        using (SqlDataReader reader = command.ExecuteReader())
+                        {
+                            int index = 1;
+
+                            while (reader.Read())
+                            {
+                                if (index == characterNumber)
+                                {
+                                    return reader["characterName"].ToString();
+                                }
+
+                                index++;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message.ToString());
+            }
+
+            return null;
+        }
+
 
         public void DisplayCharacterList()
         {
@@ -182,6 +232,7 @@ namespace RPGCharacterCreationGame
                         {
                             int index = 1;
 
+                            Console.WriteLine("\nCharacters:");
                             while (reader.Read())
                             {
                                 string characterName = reader["characterName"].ToString();
