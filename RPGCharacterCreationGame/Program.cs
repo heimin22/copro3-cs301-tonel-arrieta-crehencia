@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Linq.Expressions;
 using System.Security.Cryptography;
 using System.Text;
+using System.Data.SqlClient;
 
 namespace RPGCharacterCreationGame
 {
@@ -57,42 +58,82 @@ namespace RPGCharacterCreationGame
     // dito para sa account ng user to
     public class UserAccount
     {
-        // dictionary isa para sa username which is yung key and yung password para naman sa value 
-        private Dictionary<string, string> userCredentials;
-        // constructor bai
-        public UserAccount()
-        {
-            userCredentials = new Dictionary<string, string>();
-        }
+        private string databaseConnectionString = "Data Source=(LocalDB)\\MSSQLLocalDB;Initial Catalog=\"D:\\HANDOUTS\\COMPUTER PROGRAMMING 1\\RPGCHARACTERCREATIONGAME\\RPGCHARACTERCREATIONGAME\\CHARACTERCREATIONDATABASE.MDF\";Integrated Security=True";
+        
         public void SignUp(string username, string password)
         {
-            if (userCredentials.ContainsKey(username))
+
+            if (IsUsernameExists(username))
             {
                 Console.WriteLine("Username already exists. Please choose another one.");
                 return;
             }
 
-            userCredentials[username] = HashPassword(password);
+            
 
-            Console.WriteLine("Sign up successful!");
+            string hashedPassword = HashPassword(password);
+
+            using (SqlConnection connection = new SqlConnection(databaseConnectionString))
+            {
+                connection.Open();
+
+                // Iinsert na natin bai sa database
+                string insertQuery = "INSERT INTO UsersTable (username, password) VALUES (@username, @password)";
+                using (SqlCommand command = new SqlCommand(insertQuery, connection))
+                {
+                    command.Parameters.AddWithValue("@username", username);
+                    command.Parameters.AddWithValue("@password", hashedPassword);
+
+                    command.ExecuteNonQuery();
+                }
+
+                Console.WriteLine("Sign up successful!");
+            }
         }
 
         public bool Login(string username, string password)
         {
-            if (!userCredentials.ContainsKey(username))
+            using (SqlConnection connection = new SqlConnection(databaseConnectionString))
             {
-                Console.WriteLine("Username not found. Please sign up first.");
+                connection.Open();
+
+                // Reretrieve natin bai gamit yung SELECT duon sa database natin
+                string selectQuery = "SELECT password FROM UsersTable WHERE username = @username";
+                using (SqlCommand command = new SqlCommand(selectQuery, connection))
+                {
+                    command.Parameters.AddWithValue("@username", username);
+
+                    string hashedPassword = (string)command.ExecuteScalar();
+
+                    if (hashedPassword != null && VerifyHashedPassword(password, hashedPassword))
+                    {
+                        Console.WriteLine("Login successful!");
+                        return true;
+                    }
+                }
+
+                Console.WriteLine("Incorrect password. Please try again.");
                 return false;
             }
+        }
 
-            if (VerifyHashedPassword(password, userCredentials[username]))
+        private bool IsUsernameExists(string username) 
+        {
+            using (SqlConnection connection = new SqlConnection(databaseConnectionString)) 
             {
-                Console.WriteLine("Login successful!");
-                return true;
-            }
+                connection.Open();
 
-            Console.WriteLine("Incorrect password. Please try again.");
-            return false;
+                // Checheck naman nito if yung username is nagamit na bai sa database
+                string checkUsernameQuery = "SELECT COUNT(*) FROM UsersTable WHERE username = @username";
+                using (SqlCommand command = new SqlCommand(checkUsernameQuery, connection)) 
+                {
+                    command.Parameters.AddWithValue("@username", username);
+
+                    int count = (int)command.ExecuteScalar();
+
+                    return count > 0;   
+                }
+            }
         }
 
         private string HashPassword(string password)
@@ -122,22 +163,69 @@ namespace RPGCharacterCreationGame
         private string Password { get; set; }
 
         // ito yung constructor bai
-        public User(string Username, string Password)
+        public User(string Username)
         {
             this.Username = Username;
-            this.Password = Password;
         }
 
-        public void SetPassword(string Password)
+        public void SetPassword(string newPassword)
         {
             // otids naman yung sa pag-eeencrypt ng password ng user gamit yung hashing logic
-            this.Password = HashPassword(Password);
+            Password = HashPassword(newPassword);
+            SavePasswordToDatabase();
         }
 
-        public bool VerifyPassword(string inputPassword)
+        private string GetHashedPasswordFromDatabase()
+        { 
+            string databaseConnectionString = "Data Source=(LocalDB)\\MSSQLLocalDB;Initial Catalog=\"D:\\HANDOUTS\\COMPUTER PROGRAMMING 1\\RPGCHARACTERCREATIONGAME\\RPGCHARACTERCREATIONGAME\\CHARACTERCREATIONDATABASE.MDF\";Integrated Security=True";
+
+            using (SqlConnection connection = new SqlConnection(databaseConnectionString)) 
+            {
+                connection.Open();
+
+                string selectQuery = "SELECT password FROM UsersTable WHERE username = @username";
+
+                using (SqlCommand command = new SqlCommand(selectQuery, connection)) 
+                {
+                    command.Parameters.AddWithValue("@username", Username);
+                    
+                    using (SqlDataReader reader = command.ExecuteReader()) 
+                    {
+                        if (reader.Read()) 
+                        {
+                            return reader["password"].ToString();
+                        }
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        private void SavePasswordToDatabase() 
+        {
+            string databaseConnectionString = "Data Source=(LocalDB)\\MSSQLLocalDB;Initial Catalog=\"D:\\HANDOUTS\\COMPUTER PROGRAMMING 1\\RPGCHARACTERCREATIONGAME\\RPGCHARACTERCREATIONGAME\\CHARACTERCREATIONDATABASE.MDF\";Integrated Security=True";
+
+            using (SqlConnection connection = new SqlConnection(databaseConnectionString)) 
+            {
+                connection.Open();
+
+                string updateQuery = "UPDATE UsersTable SET password = @password WHERE username = @username";
+
+                using (SqlCommand command = new SqlCommand(updateQuery, connection))
+                {
+                    command.Parameters.AddWithValue("@password", Password);
+                    command.Parameters.AddWithValue("username", Username);
+
+                    command.ExecuteNonQuery();
+                }
+            }
+        }
+
+        public bool VerifyHashedPassword(string inputPassword, string hashedPassword)
         {
             // dito naman bai yung password decryption gamit yung hashing verification logic
-            return VerifyHashedPassword(inputPassword, Password);
+            return HashPassword(inputPassword) == hashedPassword;
         }
 
         // ito yung method bai na i-eencrypt yung password gamit yung hashing logic na SHA256
@@ -163,15 +251,15 @@ namespace RPGCharacterCreationGame
             }
         }
 
-        private bool VerifyHashedPassword(string inputPassword, string hashedPassword)
+        internal bool VerifyPassword(string password)
         {
-            // otids magveverify yan bai
-            return HashPassword(inputPassword) == hashedPassword;
+            throw new NotImplementedException();
         }
     }
     // dito yung class kapag mamimili if gagawa ng account or log-in o kaya exit
     public class AuthenticationSystem
     {
+        public string databaseConnectionString = "Data Source=(LocalDB)\\MSSQLLocalDB;Initial Catalog=\"D:\\HANDOUTS\\COMPUTER PROGRAMMING 1\\RPGCHARACTERCREATIONGAME\\RPGCHARACTERCREATIONGAME\\CHARACTERCREATIONDATABASE.MDF\";Integrated Security=True";
         private static List<User> users = new List<User>();
         private static User currentUser;
 
