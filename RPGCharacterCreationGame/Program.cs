@@ -1,12 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq.Expressions;
-using System.Security.Cryptography;
-using System.Text;
 using System.Data.SqlClient;
-using System.Xml.Linq;
-using System.Runtime.InteropServices;
 
 namespace RPGCharacterCreationGame
 {
@@ -51,7 +44,7 @@ namespace RPGCharacterCreationGame
     // ito naman yung sa interfaces bai, yung dito naman is about yung mga method na kung saan gagamitin sa 100% about sa database
     public interface IDatabaseActions
     {
-        void SavingCharacter(Character character, string[] attributeNames);
+        void SavingCharacter(Character character, string[] attributeNames, string characterID);
         void LoadingCharacter();
         void DisplayCharacterList();
         void DeleteAllCharacters();
@@ -87,6 +80,7 @@ namespace RPGCharacterCreationGame
                             DisplayCharacterList();
 
                             Console.WriteLine("\n1. Delete a specific character\n2. Delete all chaarcters");
+                            Console.Write("Enter your choice: ");
                             int delChoice = int.Parse(Console.ReadLine());
 
                             switch (delChoice)
@@ -116,7 +110,7 @@ namespace RPGCharacterCreationGame
                 Console.WriteLine(e.Message.ToString());
             }
         }
-        public void SavingCharacter(Character character, string[] attributeNames)
+        public void SavingCharacter(Character character, string[] attributeNames, string characterID)
         {
             try
             {
@@ -128,12 +122,12 @@ namespace RPGCharacterCreationGame
                         "(characterName, characterGender, characterHairStyle, characterFacialHair, characterHairColor, characterSkinColor, characterTattoos, characterMarkings, characterAge, characterEyeColor, characterHeight, characterWidth, " +
                         "characterAccessories, characterUpperBodyC, characterUBStyle, characterLowerBodyC, characterLBSTyle, characterFootwear, " +
                         "characterRace, characterClass, characterKeepsakes, characterSTR, characterDEX, characterCON, characterINT, characterWIS, characterCHA, characterAGI, " +
-                        "characterVIT, characterPER, characterLUK, characterWIL, characterFOR, characterARC, characterTEC, characterSTL)" +
+                        "characterVIT, characterPER, characterLUK, characterWIL, characterFOR, characterARC, characterTEC, characterSTL, characterID)" +
                         "VALUES " +
                         "(@characterName, @characterGender, @characterHairStyle, @characterFacialHair, @characterHairColor, @characterSkinColor, @characterTattoos, @characterMarkings, @characterAge, @characterEyeColor, @characterHeight, @characterWidth, " +
                         "@characterAccessories, @characterUpperBodyC, @characterUBStyle, @characterLowerBodyC, @characterLBSTyle, @characterFootwear, " +
                         "@characterRace, @characterClass, @characterKeepsakes, @characterSTR, @characterDEX, @characterCON, @characterINT, @characterWIS, @characterCHA, @characterAGI, " +
-                        "@characterVIT, @characterPER, @characterLUK, @characterWIL, @characterFOR, @characterARC, @characterTEC, @characterSTL)";
+                        "@characterVIT, @characterPER, @characterLUK, @characterWIL, @characterFOR, @characterARC, @characterTEC, @characterSTL, @characterID)";
 
                     using (SqlCommand command = new SqlCommand(insertQuery, connection))
                     {
@@ -166,6 +160,7 @@ namespace RPGCharacterCreationGame
                             command.Parameters.AddWithValue($"@character{attributeNames[i]}", attributes[i]);
                         }
 
+                        command.Parameters.AddWithValue("@characterID", character.characterID);
 
                         command.ExecuteNonQuery();
 
@@ -195,6 +190,7 @@ namespace RPGCharacterCreationGame
                     // Retrieve the character details from the database using characterName
                     Character loadedCharacter = RetrieveCharacterDetails(characterName);
 
+
                     // Call the GetCharacterForEditing method to edit the loaded character
                     GetCharacterForEditing(loadedCharacter);
                 }
@@ -209,7 +205,7 @@ namespace RPGCharacterCreationGame
             }
         }
 
-
+       
         private void GetCharacterForEditing(Character loadedCharacter)
         {
             try
@@ -435,7 +431,12 @@ namespace RPGCharacterCreationGame
                 {
                     connection.Open();
 
-                    string selectQuery = "SELECT characterName FROM CharacterTable";
+                    string selectQuery = "SELECT characterName, characterGender, characterHairStyle, characterFacialHair, " +
+                                 "characterHairColor, characterSkinColor, characterTattoos, characterMarkings, characterAge, " +
+                                 "characterHeight, characterWidth, characterAccessories, characterUpperBodyC, characterUBStyle, " +
+                                 "characterLowerBodyC, characterLBStyle, characterFootwear, characterRace, characterClass, " +
+                                 "characterSTR, characterDEX, characterCON, characterINT, characterWIS, characterCHA, characterAGI, " +
+                                 "characterVIT, characterPER, characterLUK, characterWIL, characterARC, characterTEC, characterSTL, characterID FROM CharacterTable";
 
                     using (SqlCommand command = new SqlCommand(selectQuery, connection))
                     {
@@ -444,10 +445,89 @@ namespace RPGCharacterCreationGame
                             int index = 1;
 
                             Console.WriteLine("\nCharacters:");
+
+                            if (!reader.HasRows) 
+                            {
+                                Console.WriteLine("No characters found");
+                                HandleCharacterActions();
+                                return;
+                            }
+
                             while (reader.Read())
                             {
                                 string characterName = reader["characterName"].ToString();
-                                Console.WriteLine($"{(index)}. {characterName}");
+                                string characterID = reader["characterID"].ToString();
+                                string characterGender = reader["characterGender"].ToString();
+                                string characterHairStyle = reader["characterHairStyle"].ToString();
+                                string characterFacialHair = reader["characterFacialHair"].ToString();
+                                string characterHairColor = reader["characterHairColor"].ToString();
+                                string characterSkinColor = reader["characterSkinColor"].ToString();
+                                string characterTattoos = reader["characterTattoos"].ToString();
+                                string characterMarkings = reader["characterMarkings"].ToString();
+                                string characterAge = reader["characterAge"].ToString();
+                                string characterHeight = reader["characterHeight"].ToString();
+                                string characterWidth = reader["characterWidth"].ToString();
+                                string characterAccessories = reader["characterAccessories"].ToString();
+                                string characterUpperBodyC = reader["characterUpperBodyC"].ToString();
+                                string characterUBStyle = reader["characterUBStyle"].ToString();
+                                string characterLowerBodyC = reader["characterLowerBodyC"].ToString();
+                                string characterLBStyle = reader["characterLBStyle"].ToString();
+                                string characterFootwear = reader["characterFootwear"].ToString();
+                                string characterRace = reader["characterRace"].ToString();
+                                string characterClass = reader["characterClass"].ToString();
+                                string characterSTR = reader["characterSTR"].ToString();
+                                string characterDEX = reader["characterDEX"].ToString();
+                                string characterCON = reader["characterCON"].ToString();
+                                string characterINT = reader["characterINT"].ToString();
+                                string characterWIS = reader["characterWIS"].ToString();
+                                string characterCHA = reader["characterCHA"].ToString();
+                                string characterAGI = reader["characterAGI"].ToString();
+                                string characterVIT = reader["characterVIT"].ToString();
+                                string characterPER = reader["characterPER"].ToString();
+                                string characterLUK = reader["characterLUK"].ToString();
+                                string characterWIL = reader["characterWIL"].ToString();
+                                string characterARC = reader["characterARC"].ToString();
+                                string characterTEC = reader["characterTEC"].ToString();
+                                string characterSTL = reader["characterSTL"].ToString();
+
+
+                                Console.WriteLine($"{index}. {characterName}");
+                                Console.WriteLine($"   ID: {characterID}");
+                                Console.WriteLine($"   Gender: {characterGender}");
+                                Console.WriteLine($"   Hair Style: {characterHairStyle}");
+                                Console.WriteLine($"   Facial Hair: {characterFacialHair}");
+                                Console.WriteLine($"   Hair Color: {characterHairColor}");
+                                Console.WriteLine($"   Skin Color: {characterSkinColor}");
+                                Console.WriteLine($"   Tattoos: {characterTattoos}");
+                                Console.WriteLine($"   Markings: {characterMarkings}");
+                                Console.WriteLine($"   Age: {characterAge}");
+                                Console.WriteLine($"   Height: {characterHeight}");
+                                Console.WriteLine($"   Width: {characterWidth}");
+                                Console.WriteLine($"   Accessories: {characterAccessories}");
+                                Console.WriteLine($"   Upper Body Clothing: {characterUpperBodyC}");
+                                Console.WriteLine($"   Upper Body Style: {characterUBStyle}");
+                                Console.WriteLine($"   Lower Body Clothing: {characterLowerBodyC}");
+                                Console.WriteLine($"   Lower Body Style: {characterLBStyle}");
+                                Console.WriteLine($"   Footwear: {characterFootwear}");
+                                Console.WriteLine($"   Race: {characterRace}");
+                                Console.WriteLine($"   Class: {characterClass}");
+                                Console.WriteLine($"   STR: {characterSTR}");
+                                Console.WriteLine($"   DEX: {characterDEX}");
+                                Console.WriteLine($"   CON: {characterCON}");
+                                Console.WriteLine($"   INT: {characterINT}");
+                                Console.WriteLine($"   WIS: {characterWIS}");
+                                Console.WriteLine($"   CHA: {characterCHA}");
+                                Console.WriteLine($"   AGI: {characterAGI}");
+                                Console.WriteLine($"   VIT: {characterVIT}");
+                                Console.WriteLine($"   PER: {characterPER}");
+                                Console.WriteLine($"   LUK: {characterLUK}");
+                                Console.WriteLine($"   WIL: {characterWIL}");
+                                Console.WriteLine($"   ARC: {characterARC}");
+                                Console.WriteLine($"   TEC: {characterTEC}");
+                                Console.WriteLine($"   STL: {characterSTL}");
+
+                                Console.WriteLine();
+
                                 index++;
                             }
                         }
@@ -460,15 +540,46 @@ namespace RPGCharacterCreationGame
             }
         }
 
+        
+
         public void DeleteAllCharacters()
         {
            try
            {
+                Console.WriteLine("Are you sure you want to delete all characters? \n1. Yes\n2. No");
 
+                while (true) 
+                {
+                    Console.Write("Enter your choice: ");
+                    int choice = int.Parse(Console.ReadLine());
+                    
+                    switch (choice) 
+                    {
+                        case 1:
+                            using (SqlConnection connection = new SqlConnection(databaseConnectionString))
+                            {
+                                connection.Open();
+
+                                string deleteAllQuery = "DELETE FROM CharacterTable";
+
+                                using (SqlCommand command = new SqlCommand(deleteAllQuery, connection))
+                                {
+                                    command.ExecuteNonQuery();
+
+                                    Console.WriteLine("All characters deleted successfully.");
+                                    HandleCharacterActions();
+                                }
+                            }
+                            break;
+                        case 2:
+                            HandleCharacterActions(); 
+                            break;
+                    }
+                }       
            }
            catch (Exception e) 
            {
-
+                Console.WriteLine($"{e.Message}");
            }
         }
 
@@ -507,6 +618,11 @@ namespace RPGCharacterCreationGame
             {
                 Console.WriteLine($"{e.Message}");
             }
+        }
+
+        public void LoadingAllCharacters()
+        {
+            throw new NotImplementedException();
         }
     }
 
@@ -558,10 +674,11 @@ namespace RPGCharacterCreationGame
 
             CharacterManager characterManager = new CharacterManager();
             string[] attributeNames = {"STR", "DEX", "CON", "INT", "WIS", "CHA", "AGI", "VIT", "PER", "LUK", "WIL", "FOR", "ARC", "TEC", "STL" };
-            characterManager.SavingCharacter(character, attributeNames);
+            characterManager.SavingCharacter(character, attributeNames, character.characterID);
             
 
             program.DisplayCharacterSummary(character);
+            program.DisplayCharacterSummary(character.characterID);
             Environment.Exit(0);
 
             return character;
