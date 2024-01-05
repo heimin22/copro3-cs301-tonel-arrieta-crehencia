@@ -6,6 +6,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Data.SqlClient;
 using System.Xml.Linq;
+using System.Runtime.InteropServices;
 
 namespace RPGCharacterCreationGame
 {
@@ -50,7 +51,7 @@ namespace RPGCharacterCreationGame
     // ito naman yung sa interfaces bai, yung dito naman is about yung mga method na kung saan gagamitin sa 100% about sa database
     public interface IDatabaseActions
     {
-        void SavingCharacter(Character character);
+        void SavingCharacter(Character character, string[] attributeNames);
         void LoadingCharacter();
         void DisplayCharacterList();
         void DeleteAllCharacters();
@@ -97,7 +98,7 @@ namespace RPGCharacterCreationGame
                 Console.WriteLine(e.Message.ToString());
             }
         }
-        public void SavingCharacter(Character character)
+        public void SavingCharacter(Character character, string[] attributeNames)
         { 
             try
             {
@@ -140,6 +141,15 @@ namespace RPGCharacterCreationGame
                         command.Parameters.AddWithValue("@characterClass", character.characterClass);
                         command.Parameters.AddWithValue("@characterKeepsakes", character.keepsakes);
 
+                        // Dito naman bai ilalagay ko na sa database yung attributes
+                        int[] attributes = character.attributes;
+                        for (int i = 0; i < attributes.Length; i++)
+                        {
+                            command.Parameters.AddWithValue($"@character{attributeNames[i]}", attributes[i]);
+                        }
+
+
+                        command.ExecuteNonQuery();
 
                         
                     }
@@ -246,51 +256,14 @@ namespace RPGCharacterCreationGame
             character.characterID = GenerateCharacterID();
 
             CharacterManager characterManager = new CharacterManager();
-            characterManager.SavingCharacter(character);
+            string[] attributeNames = {"STR", "DEX", "CON", "INT", "WIS", "CHA", "AGI", "VIT", "PER", "LUK", "WIL", "FOR", "ARC", "TEC", "STL" };
+            characterManager.SavingCharacter(character, attributeNames);
             
 
             program.DisplayCharacterSummary(character);
             Environment.Exit(0);
 
             return character;
-        }
-
-        private static void SaveCharacterToDatabase(Character character)
-        {
-            try
-            {
-                string databaseConnectionString = @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=D:\HANDOUTS\COMPUTER PROGRAMMING 1\RPGCHARACTERCREATIONGAME\RPGCHARACTERCREATIONGAME\CHARACTERCREATIONDATABASE.MDF;Integrated Security=True;Connect Timeout=30";
-                using (SqlConnection connection = new SqlConnection(databaseConnectionString)) 
-                {
-                    connection.Open();
-
-                    // Check if the character already exists in the database
-                    string checkCharacterQuery = "SELECT COUNT(*) FROM CharactersTable WHERE characterName  = @name";
-                    using (SqlCommand checkCommand = new SqlCommand(checkCharacterQuery, connection))
-                    {
-                        checkCommand.Parameters.AddWithValue("@characterID", character.name);
-
-                        int characterCount = (int)checkCommand.ExecuteScalar();
-
-                        if (characterCount > 0)
-                        {
-                            Console.WriteLine("Character with the same ID already exists. Please choose another ID.");
-                            return;
-                        }
-                    }
-
-
-                    // Insert character setails into the CharactersTable
-                    string insertQuery = @"INSERT INTO CharactersTable (characterName, characterGender, characterHair, )";
-
-
-
-                }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message.ToString());
-            }
         }
 
         public static string GetGender()
