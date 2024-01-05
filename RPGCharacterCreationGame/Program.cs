@@ -67,7 +67,7 @@ namespace RPGCharacterCreationGame
                 if (IsUsernameExists(username))
                 {
                     Console.WriteLine("Username already exists. Please choose another one.");
-                    return;
+                    AuthenticationSystem.LogSign();
                 }
 
                 using (SqlConnection connection = new SqlConnection(databaseConnectionString))
@@ -101,22 +101,33 @@ namespace RPGCharacterCreationGame
                 {
                     connection.Open();
 
-                    string selectQuery = "SELECT password FROM UsersTable WHERE username = @username";
+                    string selectQuery = "SELECT password FROM UsersTable WHERE LOWER(username) = LOWER(@username)";
                     using (SqlCommand command = new SqlCommand(selectQuery, connection))
                     {
                         command.Parameters.AddWithValue("@username", username);
 
-                        string storedPassword = (string)command.ExecuteScalar();
+                        object result = command.ExecuteScalar();
 
-                        if (storedPassword != null && storedPassword == password)
+                        if (result != null)
                         {
-                            Console.WriteLine("Login successful!");
-                            return true;
+                            string storedPassword = result.ToString();
+                            if (storedPassword.Trim() == password.Trim())
+                            {
+                                Console.WriteLine("Login successful!");
+                                return true;
+                            }
+                            else
+                            {
+                                Console.WriteLine("Incorrect password. Please try again.");
+                                return false;
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine("User not found. Please check your username.");
+                            return false;
                         }
                     }
-
-                    Console.WriteLine("Incorrect password. Please try again.");
-                    return false;
                 }
             }
             catch (Exception e)
@@ -300,11 +311,10 @@ namespace RPGCharacterCreationGame
                 Console.Write("Enter your password: ");
                 string password = Console.ReadLine();
 
-                User user = users.Find(u => u.Username == username);
-
-                if (user != null && user.VerifyPassword(password))
+                UserAccount userAccount = new UserAccount();
+                if (userAccount.Login(username, password))
                 {
-                    currentUser = user;
+                    currentUser = new User(username);
                     return true;
                 }
 
@@ -343,6 +353,79 @@ namespace RPGCharacterCreationGame
         }
 
     }
+
+    public class CharacterManager : IDatabaseActions
+    {
+        private User currentUser;
+
+        public CharacterManager(User user) 
+        {
+            currentUser = user;
+        }
+
+        public void HandleCharacterActions()
+        {
+            try
+            {
+                while (true)
+                {
+                    Console.WriteLine("\nCharacter Actions: \n1. Create New Character\n2. Load Character\n3. Delete Character\n4. Exit");
+                    Console.Write("Choose an option: ");
+                    int choice = int.Parse(Console.ReadLine());
+
+                    switch (choice)
+                    {
+                        case 1:
+                            Program.GetCharacter();
+                            break;
+                        case 2:
+                            RetrieveCharacters();
+                            break;
+                        case 3:
+                            RetrieveCharacters();
+                            break;
+                        default:
+                            Console.WriteLine("Invalid choice. Please try again.");
+                            break;
+                    }
+                }
+            }
+            catch (Exception e) 
+            {
+                Console.WriteLine(e.Message.ToString());
+            }
+        }
+        public void SavingCharacter()
+        {
+            // Implement saving character logic here
+        }
+
+        public void RetrieveCharacters()
+        {
+            // Implement retrieving characters logic here
+        }
+
+        public void LoadingCharacter()
+        {
+            // Implement loading character logic here
+        }
+
+        public void DisplayCharacterList()
+        {
+            // Implement displaying character list logic here
+        }
+
+        public void DeleteAllCharacters()
+        {
+            // Implement deleting all characters logic here
+        }
+
+        public void DeleteCharacter()
+        {
+            // Implement deleting character logic here
+        }
+    }
+
     // inheritance
     public class Program : CharacterDetailSummary
     {
