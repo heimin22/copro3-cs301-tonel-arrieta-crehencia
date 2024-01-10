@@ -108,8 +108,38 @@ namespace RPGCharacterCreationGame
             catch (Exception e)
             {
                 Console.WriteLine(e.Message.ToString());
+                HandleCharacterActions();
             }
         }
+
+        public bool IsCharacterNameTaken(string characterName)
+        {
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(databaseConnectionString))
+                {
+                    connection.Open();
+
+                    string selectQuery = "SELECT COUNT(*) FROM CharacterTable WHERE LOWER(characterName) = LOWER(@characterName)";
+
+                    using (SqlCommand command = new SqlCommand(selectQuery, connection))
+                    {
+                        command.Parameters.AddWithValue("@characterName", characterName);
+
+                        int count = (int)command.ExecuteScalar();
+
+                        return count > 0;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message.ToString());
+                return true; // Assuming an error means the name is taken to avoid unintended character creation
+            }
+        }
+
+
         public void SavingCharacter(Character character, string[] attributeNames, string characterID)
         {
             try
@@ -688,160 +718,177 @@ namespace RPGCharacterCreationGame
         {
             try
             {
-                Console.WriteLine("\nEnter your gender:\n1. Male\n2. Female");
-                Console.Write("Enter your choice: ");
-                int choice = int.Parse(Console.ReadLine());
-                switch (choice)
+                while (true)
                 {
-                    case 1:
-                        return "Male";
-                    case 2:
-                        return "Female";
-                    default:
-                        Console.WriteLine("Invalid choice. Returning default gender: Male");
-                        return "Male";
+                    Console.WriteLine("\nEnter your gender:\n1. Male\n2. Female");
+                    Console.Write("Enter your choice: ");
+
+                    if (int.TryParse(Console.ReadLine(), out int choice))
+                    {
+                        switch (choice)
+                        {
+                            case 1:
+                                return "Male";
+                            case 2:
+                                return "Female";
+                            default:
+                                Console.WriteLine("Invalid choice. Please enter 1 for Male or 2 for Female.");
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Invalid input. Please enter a number.");
+                    }
                 }
             }
-            catch (FormatException)
+            catch (Exception e)
             {
-                Console.WriteLine("Invalid input format. Please enter a valid choice.");
-                return "Male"; // Returning default gender in case of exception
+                Console.WriteLine($"{e.Message}");
+                return GetGender(); // Returning default gender in case of exception
             }
         }
+
         public static string GetHairStyle(string gender)
         {
             try
             {
-                Console.WriteLine("\nChoose a hair style from the options: ");
-                if (string.Equals(gender, "male", StringComparison.OrdinalIgnoreCase))
+                while (true)
                 {
-                    Console.WriteLine($"Options (Male):\n1. Short Crew Cut\n2. Short Buzzed Cut\n3. Crew Cut\n4. Ivy League Crew Cut\n5. Short Textured Crop\n6. Curly Fade\n7. High Bald Fade\n8. Pompadour Fade\n9. Comb over with tapered sides\n10. Brushed up hairstyle\n11. Quiff\n12. Slicked back undercut\n13. Textured crop with fringe\n14. Short mohawk fade\n15. Curly mohawk\n16. Long curly hair\n17. Long straight hair\n18. Man bun\n19. Top knot bun\n20. Warrior braids\n21. Dreadlocks\n22. Shaved head\n23. Head completely bald");
-                }
-                else if (string.Equals(gender, "female", StringComparison.OrdinalIgnoreCase))
-                {
-                    Console.WriteLine($"Options (Female):\n1. Very short pixie cut\n2. Short bob haircut\n3. Chin-length bob\n4. Shoulder-length layered cut\n5. Long layers haircut\n6. Flowing straight hair\n7. Beach waves hair\n8. Tight curly hair\n9. Curly bob haircut\n10. Afro textured hair\n11. Buzzed sides with long top\n12. Undercut with long bangs\n13. Cornrow braids\n14. Goddess braids\n15. Long dreadlocks\n16. Short ponytail\n17. High ponytail\n18. Long braid\n19. French braid\n20. Dutch braid\n21. Fishtail braid\n22. Wispy bangs\n23. Swept bangs\n24. Head completely bald");
-                }
-                else
-                {
-                    Console.WriteLine("Please enter a valid gender to continue with hairstyle.");
-                    GetGender();
-                }
-
-                Console.Write("\nEnter the number of your chosen hair style: ");
-                int choice;
-                if (int.TryParse(Console.ReadLine(), out choice))
-                {
+                    Console.WriteLine("\nChoose a hair style from the options: ");
                     if (string.Equals(gender, "male", StringComparison.OrdinalIgnoreCase))
                     {
-                        switch (choice)
-                        {
-                            case 1:
-                                return "Short Crew Cut";
-                            case 2:
-                                return "Short Buzzed Cut";
-                            case 3:
-                                return "Crew Cut";
-                            case 4:
-                                return "Ivy League Crew Cut";
-                            case 5:
-                                return "Short Textured Crop";
-                            case 6:
-                                return "Curly Fade";
-                            case 7:
-                                return "High Bald Fade";
-                            case 8:
-                                return "Pompadour Fade";
-                            case 9:
-                                return "Comb over with tapered sides";
-                            case 10:
-                                return "Brushed up hairstyle";
-                            case 11:
-                                return "Quiff";
-                            case 12:
-                                return "Slicked back undercut";
-                            case 13:
-                                return "Textured crop with fringe";
-                            case 14:
-                                return "Short mohawk fade";
-                            case 15:
-                                return "Curly mohawk";
-                            case 16:
-                                return "Long curly hair";
-                            case 17:
-                                return "Long straight hair";
-                            case 18:
-                                return "Man bun";
-                            case 19:
-                                return "Top knot bun";
-                            case 20:
-                                return "Warrior braids";
-                            case 21:
-                                return "Dreadlocks";
-                            case 22:
-                                return "Shaved head";
-                            case 23:
-                                return "Head completely bald";
-                            default:
-                                Console.WriteLine("Invalid choice. Returning default hair style.");
-                                return "Short Crew Cut"; // Default hair style
-                        }
+                        Console.WriteLine($"Options (Male):\n1. Short Crew Cut\n2. Short Buzzed Cut\n3. Crew Cut\n4. Ivy League Crew Cut\n5. Short Textured Crop\n6. Curly Fade\n7. High Bald Fade\n8. Pompadour Fade\n9. Comb over with tapered sides\n10. Brushed up hairstyle\n11. Quiff\n12. Slicked back undercut\n13. Textured crop with fringe\n14. Short mohawk fade\n15. Curly mohawk\n16. Long curly hair\n17. Long straight hair\n18. Man bun\n19. Top knot bun\n20. Warrior braids\n21. Dreadlocks\n22. Shaved head\n23. Head completely bald");
                     }
                     else if (string.Equals(gender, "female", StringComparison.OrdinalIgnoreCase))
                     {
-                        switch (choice)
+                        Console.WriteLine($"Options (Female):\n1. Very short pixie cut\n2. Short bob haircut\n3. Chin-length bob\n4. Shoulder-length layered cut\n5. Long layers haircut\n6. Flowing straight hair\n7. Beach waves hair\n8. Tight curly hair\n9. Curly bob haircut\n10. Afro textured hair\n11. Buzzed sides with long top\n12. Undercut with long bangs\n13. Cornrow braids\n14. Goddess braids\n15. Long dreadlocks\n16. Short ponytail\n17. High ponytail\n18. Long braid\n19. French braid\n20. Dutch braid\n21. Fishtail braid\n22. Wispy bangs\n23. Swept bangs\n24. Head completely bald");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Please enter a valid gender to continue with hairstyle.");
+                        gender = GetGender();
+                    }
+
+                    Console.Write("\nEnter the number of your chosen hair style: ");
+                    if (int.TryParse(Console.ReadLine(), out int choice))
+                    {
+                        if (string.Equals(gender, "male", StringComparison.OrdinalIgnoreCase))
                         {
-                            case 1:
-                                return "Very short pixie cut";
-                            case 2:
-                                return "Short bob haircut";
-                            case 3:
-                                return "Chin-length bob";
-                            case 4:
-                                return "Shoulder-length layered cut";
-                            case 5:
-                                return "Long layers haircut";
-                            case 6:
-                                return "Flowing straight hair";
-                            case 7:
-                                return "Beach waves hair";
-                            case 8:
-                                return "Tight curly hair";
-                            case 9:
-                                return "Curly bob haircut";
-                            case 10:
-                                return "Afro textured hair";
-                            case 11:
-                                return "Buzzed sides with long top";
-                            case 12:
-                                return "Undercut with long bangs";
-                            case 13:
-                                return "Cornrow braids";
-                            case 14:
-                                return "Goddess braids";
-                            case 15:
-                                return "Long dreadlocks";
-                            case 16:
-                                return "Short ponytail";
-                            case 17:
-                                return "High ponytail";
-                            case 18:
-                                return "Long braid";
-                            case 19:
-                                return "French braid";
-                            case 20:
-                                return "Dutch braid";
-                            case 21:
-                                return "Fishtail braid";
-                            case 22:
-                                return "Wispy bangs";
-                            case 23:
-                                return "Swept bangs";
-                            case 24:
-                                return "Head completely bald";
-                            default:
-                                Console.WriteLine("Invalid choice. Returning default hair style.");
-                                return "Very short pixie cut"; // Default hair style
+                            switch (choice)
+                            {
+                                case 1:
+                                    return "Short Crew Cut";
+                                case 2:
+                                    return "Short Buzzed Cut";
+                                case 3:
+                                    return "Crew Cut";
+                                case 4:
+                                    return "Ivy League Crew Cut";
+                                case 5:
+                                    return "Short Textured Crop";
+                                case 6:
+                                    return "Curly Fade";
+                                case 7:
+                                    return "High Bald Fade";
+                                case 8:
+                                    return "Pompadour Fade";
+                                case 9:
+                                    return "Comb over with tapered sides";
+                                case 10:
+                                    return "Brushed up hairstyle";
+                                case 11:
+                                    return "Quiff";
+                                case 12:
+                                    return "Slicked back undercut";
+                                case 13:
+                                    return "Textured crop with fringe";
+                                case 14:
+                                    return "Short mohawk fade";
+                                case 15:
+                                    return "Curly mohawk";
+                                case 16:
+                                    return "Long curly hair";
+                                case 17:
+                                    return "Long straight hair";
+                                case 18:
+                                    return "Man bun";
+                                case 19:
+                                    return "Top knot bun";
+                                case 20:
+                                    return "Warrior braids";
+                                case 21:
+                                    return "Dreadlocks";
+                                case 22:
+                                    return "Shaved head";
+                                case 23:
+                                    return "Head completely bald";
+                                default:
+                                    Console.WriteLine("Invalid choice. Returning default hair style.");
+                                    return "Short Crew Cut"; // Default hair style
+                            }
                         }
+                        else if (string.Equals(gender, "female", StringComparison.OrdinalIgnoreCase))
+                        {
+                            switch (choice)
+                            {
+                                case 1:
+                                    return "Very short pixie cut";
+                                case 2:
+                                    return "Short bob haircut";
+                                case 3:
+                                    return "Chin-length bob";
+                                case 4:
+                                    return "Shoulder-length layered cut";
+                                case 5:
+                                    return "Long layers haircut";
+                                case 6:
+                                    return "Flowing straight hair";
+                                case 7:
+                                    return "Beach waves hair";
+                                case 8:
+                                    return "Tight curly hair";
+                                case 9:
+                                    return "Curly bob haircut";
+                                case 10:
+                                    return "Afro textured hair";
+                                case 11:
+                                    return "Buzzed sides with long top";
+                                case 12:
+                                    return "Undercut with long bangs";
+                                case 13:
+                                    return "Cornrow braids";
+                                case 14:
+                                    return "Goddess braids";
+                                case 15:
+                                    return "Long dreadlocks";
+                                case 16:
+                                    return "Short ponytail";
+                                case 17:
+                                    return "High ponytail";
+                                case 18:
+                                    return "Long braid";
+                                case 19:
+                                    return "French braid";
+                                case 20:
+                                    return "Dutch braid";
+                                case 21:
+                                    return "Fishtail braid";
+                                case 22:
+                                    return "Wispy bangs";
+                                case 23:
+                                    return "Swept bangs";
+                                case 24:
+                                    return "Head completely bald";
+                                default:
+                                    Console.WriteLine("Invalid choice. Returning default hair style.");
+                                    return "Very short pixie cut"; // Default hair style
+                            }
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Invalid input. Please enter a number.");
                     }
                 }
             }
@@ -850,35 +897,42 @@ namespace RPGCharacterCreationGame
                 Console.WriteLine("Invalid input. Returning default hair style.");
                 return "Very short crew cut"; // Default hair style
             }
-            Console.WriteLine("Invalid input. Returning default hair style.");
-            return "Very short crew cut"; // Default hair style
         }
+
         public static string GetFacialHair()
         {
             try
             {
-                Console.WriteLine("\nDoes the character have facial hair? \n1. Yes\n2. No ");
-                Console.Write("Enter your choice: ");
-                int choice = int.Parse(Console.ReadLine());
-
-                switch (choice)
+                while (true)
                 {
-                    case 1:
-                        return "Yes";
-                    case 2:
-                        return "No";
-
-                    default:
-                        Console.WriteLine("Invalid choice. Returning default choice: No facial hair");
-                        return "No";
+                    Console.WriteLine("\nDoes the character have facial hair? \n1. Yes\n2. No ");
+                    Console.Write("Enter your choice: ");
+                    if (int.TryParse(Console.ReadLine(), out int choice))
+                    {
+                        switch (choice)
+                        {
+                            case 1:
+                                return "Yes";
+                            case 2:
+                                return "No";
+                            default:
+                                Console.WriteLine("Invalid choice. Please enter 1 for Yes or 2 for No.");
+                                continue; // Go back to the beginning of the loop
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Invalid input. Please enter a number.");
+                    }
                 }
-            } 
-            catch (FormatException) 
+            }
+            catch (FormatException)
             {
                 Console.WriteLine("Invalid choice. Returning default choice: No facial hair");
                 return "No";
-            }      
+            }
         }
+
 
         public static string GetHairColor()
         {
@@ -934,10 +988,10 @@ namespace RPGCharacterCreationGame
                         return "Black";
                 }
             }
-            catch (FormatException)
+            catch (FormatException e)
             {
-                Console.WriteLine("Invalid choice. Returning default: Black");
-                return "Black";
+                Console.WriteLine($"{e.Message}");
+                return GetHairColor();
             }
         }
 
@@ -1080,20 +1134,29 @@ namespace RPGCharacterCreationGame
         {
             try
             {
-                Console.WriteLine("\nEnter the character's age: \n1. Young\n2. Adult\n3. Elder ");
-                Console.Write("Enter your age: ");
-                int choice = int.Parse(Console.ReadLine());
-                switch (choice)
+                while (true)
                 {
-                    case 1:
-                        return "Young";
-                    case 2:
-                        return "Adult";
-                    case 3:
-                        return "Elder";
-                    default:
-                        Console.WriteLine("Invalid age. Returning default: Adult");
-                        return "Adult";
+                    Console.WriteLine("\nEnter the character's age: \n1. Young\n2. Adult\n3. Elder ");
+                    Console.Write("Enter your age: ");
+                    if (int.TryParse(Console.ReadLine(), out int choice))
+                    {
+                        switch (choice)
+                        {
+                            case 1:
+                                return "Young";
+                            case 2:
+                                return "Adult";
+                            case 3:
+                                return "Elder";
+                            default:
+                                Console.WriteLine("Invalid age. Please enter 1 for Young, 2 for Adult, or 3 for Elder.");
+                                continue; // Go back to the beginning of the loop
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Invalid input. Please enter a number.");
+                    }
                 }
             }
             catch (FormatException)
@@ -1102,6 +1165,7 @@ namespace RPGCharacterCreationGame
                 return "Adult";
             }
         }
+
         public static string GetEyeColor()
         {
             try
@@ -1164,48 +1228,65 @@ namespace RPGCharacterCreationGame
         {
             try
             {
-                Console.WriteLine("\nEnter the character's height: \n1. Short\n2. Average\n3. Tall ");
-                Console.Write("Enter your height: ");
-                int choice = int.Parse(Console.ReadLine());
-                switch (choice)
+                while (true)
                 {
-                    case 1:
-                        return "Short";
-                    case 2:
-                        return "Average";
-                    case 3:
-                        return "Tall";
-                    default:
-                        // Default case if none of the options match
-                        Console.WriteLine("Invalid height. Returning default: Average");
-                        return "Average";
+                    Console.WriteLine("\nEnter the character's height: \n1. Short\n2. Average\n3. Tall ");
+                    Console.Write("Enter your height: ");
+                    if (int.TryParse(Console.ReadLine(), out int choice))
+                    {
+                        switch (choice)
+                        {
+                            case 1:
+                                return "Short";
+                            case 2:
+                                return "Average";
+                            case 3:
+                                return "Tall";
+                            default:
+                                Console.WriteLine("Invalid height. Please enter 1 for Short, 2 for Average, or 3 for Tall.");
+                                continue; // Go back to the beginning of the loop
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Invalid input. Please enter a number.");
+                    }
                 }
             }
-            catch (FormatException) 
+            catch (FormatException)
             {
                 Console.WriteLine("Invalid height. Returning default: Average");
                 return "Average";
             }
         }
+
         public static string GetBodyWidth()
         {
             try
             {
-                Console.WriteLine("\nEnter the character's frame:\n1. Lean\n2.Muscular\n3.Broad");
-                Console.Write("Enter your choice: ");
-                int choice = int.Parse(Console.ReadLine());
-
-                switch (choice) 
+                while (true)
                 {
-                    case 1:
-                        return "Lean";
-                    case 2:
-                        return "Muscular";
-                    case 3:
-                        return "Broad";
-                    default:
-                        Console.WriteLine("Invalid frame. Returning default: Lean");
-                        return "Lean";
+                    Console.WriteLine("\nEnter the character's frame:\n1. Lean\n2. Muscular\n3. Broad");
+                    Console.Write("Enter your choice: ");
+                    if (int.TryParse(Console.ReadLine(), out int choice))
+                    {
+                        switch (choice)
+                        {
+                            case 1:
+                                return "Lean";
+                            case 2:
+                                return "Muscular";
+                            case 3:
+                                return "Broad";
+                            default:
+                                Console.WriteLine("Invalid frame. Please enter 1 for Lean, 2 for Muscular, or 3 for Broad.");
+                                continue; // Go back to the beginning of the loop
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Invalid input. Please enter a number.");
+                    }
                 }
             }
             catch (FormatException)
@@ -1214,6 +1295,7 @@ namespace RPGCharacterCreationGame
                 return "Lean";
             }
         }
+
         public static string GetAccessories()
         {
             try
@@ -1454,86 +1536,102 @@ namespace RPGCharacterCreationGame
         {
             try
             {
-                Console.WriteLine("\nEnter the character's race: \n1. Human\n2. Elf\n3. Dwarf\n4. Orc\n5. Gnome\n6. Halflings\n7. Tiefling\n8. Aasimar\n9. Tabaxi\n10. Genasi");
-                Console.Write("Enter your choice: ");
-                int choice = int.Parse(Console.ReadLine());
-                switch (choice)
+                while (true)
                 {
-                    case 1:
-                        return "Human";
-                    case 2:
-                        return "Elf";
-                    case 3:
-                        return "Dwarf";
-                    case 4:
-                        return "Orc";
-                    case 5:
-                        return "Gnome";
-                    case 6:
-                        return "Halflings";
-                    case 7:
-                        return "Tiefling";
-                    case 8:
-                        return "Aasimar";
-                    case 9:
-                        return "Tabaxi";
-                    case 10:
-                        return "Genasi";
-                    default:
-                        // Default case if none of the options match
-                        Console.WriteLine("Invalid race. Returning default: Human");
-                        return "Human";
+                    Console.WriteLine("\nEnter the character's race: \n1. Human\n2. Elf\n3. Dwarf\n4. Orc\n5. Gnome\n6. Halflings\n7. Tiefling\n8. Aasimar\n9. Tabaxi\n10. Genasi");
+                    Console.Write("Enter your choice: ");
+                    if (int.TryParse(Console.ReadLine(), out int choice))
+                    {
+                        switch (choice)
+                        {
+                            case 1:
+                                return "Human";
+                            case 2:
+                                return "Elf";
+                            case 3:
+                                return "Dwarf";
+                            case 4:
+                                return "Orc";
+                            case 5:
+                                return "Gnome";
+                            case 6:
+                                return "Halflings";
+                            case 7:
+                                return "Tiefling";
+                            case 8:
+                                return "Aasimar";
+                            case 9:
+                                return "Tabaxi";
+                            case 10:
+                                return "Genasi";
+                            default:
+                                Console.WriteLine("Invalid race. Please enter a number between 1 and 10.");
+                                continue; // Go back to the beginning of the loop
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Invalid input. Please enter a number.");
+                    }
                 }
             }
-            catch (FormatException) 
+            catch (FormatException)
             {
                 Console.WriteLine("Invalid race. Returning default: Human");
                 return "Human";
             }
         }
+
         public static string GetCharacterClass()
         {
             try
             {
-                Console.WriteLine("Enter the character's class: \n1. Warrior\n2. Mage\n3. Ranger\n4. Rogue\n5. Cleric\n6. Paladin\n7. Bard\n8. Druid\n9. Monk\n10. Warlock");
-                Console.Write("Enter your choice: ");
-                int choice = int.Parse(Console.ReadLine());
-
-                switch (choice)
+                while (true)
                 {
-                    case 1:
-                        return "Warrior";
-                    case 2:
-                        return "Mage";
-                    case 3:
-                        return "Ranger";
-                    case 4:
-                        return "Rogue";
-                    case 5:
-                        return "Cleric";
-                    case 6:
-                        return "Paladin";
-                    case 7:
-                        return "Bard";
-                    case 8:
-                        return "Druid";
-                    case 9:
-                        return "Monk";
-                    case 10:
-                        return "Warlock";
-                    default:
-                        // Default case if none of the options match
-                        Console.WriteLine("Invalid class. Returning default: Warrior");
-                        return "Warrior";
+                    Console.WriteLine("\nEnter the character's class: \n1. Warrior\n2. Mage\n3. Ranger\n4. Rogue\n5. Cleric\n6. Paladin\n7. Bard\n8. Druid\n9. Monk\n10. Warlock");
+                    Console.Write("Enter your choice: ");
+                    if (int.TryParse(Console.ReadLine(), out int choice))
+                    {
+                        switch (choice)
+                        {
+                            case 1:
+                                return "Warrior";
+                            case 2:
+                                return "Mage";
+                            case 3:
+                                return "Ranger";
+                            case 4:
+                                return "Rogue";
+                            case 5:
+                                return "Cleric";
+                            case 6:
+                                return "Paladin";
+                            case 7:
+                                return "Bard";
+                            case 8:
+                                return "Druid";
+                            case 9:
+                                return "Monk";
+                            case 10:
+                                return "Warlock";
+                            default:
+                                Console.WriteLine("Invalid class. Please enter a number between 1 and 10.");
+                                continue; // Go back to the beginning of the loop
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Invalid input. Please enter a number.");
+                    }
                 }
             }
-            catch (FormatException) 
+            catch (FormatException)
             {
                 Console.WriteLine("Invalid class. Returning default: Warrior");
                 return "Warrior";
             }
-            
         }
+
         public static string GetKeepsakes()
         {
             try
@@ -1618,8 +1716,23 @@ namespace RPGCharacterCreationGame
         }
         public static string GetName()
         {
-            Console.Write("\nEnter the character's name: ");
-            return Console.ReadLine();
+            while (true)
+            {
+                Console.Write("\nEnter the character's name: ");
+                string characterName = Console.ReadLine();
+
+                CharacterManager characterManager = new CharacterManager();
+
+                if (!characterManager.IsCharacterNameTaken(characterName))
+                {
+                    return characterName;
+                }
+                else
+                {
+                    Console.WriteLine("Character name is already taken. Please choose a different name.");
+                }
+            }
+
         }
         
         public override void DisplayCharacterSummary(Character character)
