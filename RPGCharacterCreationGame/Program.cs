@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Data.SqlClient;
+using System.Security.Principal;
 
 namespace RPGCharacterCreationGame
 {
@@ -1721,20 +1722,32 @@ namespace RPGCharacterCreationGame
                 Console.Write("\nEnter the character's name: ");
                 string characterName = Console.ReadLine();
 
+                if (string.IsNullOrWhiteSpace(characterName))
+                {
+                    Console.WriteLine("Character name cannot be empty. Please enter a valid name.");
+                    continue;
+                }
+
                 CharacterManager characterManager = new CharacterManager();
 
                 if (!characterManager.IsCharacterNameTaken(characterName))
                 {
                     return characterName;
                 }
+                
                 else
                 {
                     Console.WriteLine("Character name is already taken. Please choose a different name.");
                 }
             }
-
         }
-        
+
+        public static bool IsNullOrWhiteSpace(string value)
+        {
+            return string.IsNullOrWhiteSpace(value);
+        }
+
+
         public override void DisplayCharacterSummary(Character character)
         {
             Console.WriteLine("\nCharacter Summary:");
