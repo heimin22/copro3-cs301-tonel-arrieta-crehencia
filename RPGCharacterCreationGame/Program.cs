@@ -247,6 +247,24 @@ namespace RPGCharacterCreationGame
                 Program programInstance = new Program();
 
                 Console.WriteLine("\nEditing Character Details:");
+
+                Console.WriteLine("Do you want to change the character's name? \n1. Yes\n2. No");
+                Console.Write("Enter your choice: ");
+                string changeNameChoice = Console.ReadLine().Trim();
+
+                while (changeNameChoice != "1" && changeNameChoice != "2")
+                {
+                    Console.WriteLine("Invalid choice. Please enter 1 for Yes or 2 for No.");
+                    Console.Write("Do you want to change the character's name? (1 for Yes, 2 for No): ");
+                    changeNameChoice = Console.ReadLine().Trim();
+                }
+
+                if (changeNameChoice == "1")
+                {
+                    character.name = Program.GetName();
+                }
+
+
                 character.gender = Program.GetGender();
                 character.hairStyle = Program.GetHairStyle(character.gender);
                 character.facialHair = Program.GetFacialHair();
@@ -270,12 +288,39 @@ namespace RPGCharacterCreationGame
                 character.attributes = Program.GetAttributeAllocation();
                 // attributes are already set during loading
 
-                // Save the edited character details
-                string[] attributeNames = { "STR", "DEX", "CON", "INT", "WIS", "CHA", "AGI", "VIT", "PER", "LUK", "WIL", "FOR", "ARC", "TEC", "STL" };
-                UpdateCharacter(character, attributeNames);
+                Console.WriteLine("\nDo you want to save the changes? \n1. Yes\n2. No: ");
+                Console.Write("Enter your choice: ");
+                string saveChoice = Console.ReadLine().Trim();
 
+                while (saveChoice != "1" && saveChoice != "2")
+                {
+                    Console.WriteLine("Invalid choice. Please enter 1 for Yes or 2 for No.");
+                    Console.Write("\nDo you want to save the changes? (1 for Yes, 2 for No): ");
+                    saveChoice = Console.ReadLine().Trim();
+                }
+
+                if (saveChoice == "1")
+                {
+                    // Save the edited character details
+                    string[] attributeNames = { "STR", "DEX", "CON", "INT", "WIS", "CHA", "AGI", "VIT", "PER", "LUK", "WIL", "FOR", "ARC", "TEC", "STL" };
+                    UpdateCharacter(character, attributeNames);
+                    programInstance.DisplayCharacterSummary(character);
+                    Console.WriteLine("Character details saved successfully.");
+                    HandleCharacterActions();
+                }
+                else
+                {
+                    Console.WriteLine("Changes not saved. Returning to character actions.");
+                    HandleCharacterActions();
+                }
+
+                // Save the edited character details
+                /*string[] attributeNames = { "STR", "DEX", "CON", "INT", "WIS", "CHA", "AGI", "VIT", "PER", "LUK", "WIL", "FOR", "ARC", "TEC", "STL" };
+                UpdateCharacter(character, attributeNames);
                 programInstance.DisplayCharacterSummary(character);
-                Environment.Exit(0);
+                HandleCharacterActions();
+                */
+                //Environment.Exit(0);
             }
             catch (Exception e)
             {
@@ -577,7 +622,7 @@ namespace RPGCharacterCreationGame
         {
            try
            {
-                Console.WriteLine("Are you sure you want to delete all characters? \n1. Yes\n2. No");
+                Console.WriteLine("\nAre you sure you want to delete all characters? \n1. Yes\n2. No");
 
                 while (true) 
                 {
@@ -614,30 +659,54 @@ namespace RPGCharacterCreationGame
            }
         }
 
+
         public void DeleteCharacter()
         {
             try
             {
                 Console.Write("Enter the number of the character you want to delete: ");
-                int characterNumber = int.Parse(Console.ReadLine());
+                int characterNumber;
+
+                while (!int.TryParse(Console.ReadLine(), out characterNumber))
+                {
+                    Console.WriteLine("Invalid input. Please enter a valid number.");
+                    Console.Write("Enter the number of the character you want to delete: ");
+                }
 
                 string characterName = GetCharacterNameByNumber(characterNumber);
 
                 if (characterName != null)
                 {
-                    using (SqlConnection connection = new SqlConnection(databaseConnectionString))
+                    Console.Write($"Are you sure you want to delete the character '{characterName}'? (1 for Yes, 2 for No): ");
+                    string deleteConfirmation = Console.ReadLine().Trim();
+
+                    while (deleteConfirmation != "1" && deleteConfirmation != "2")
                     {
-                        connection.Open();
+                        Console.WriteLine("Invalid choice. Please enter 1 for Yes or 2 for No.");
+                        Console.Write($"Are you sure you want to delete the character '{characterName}'? (1 for Yes, 2 for No): ");
+                        deleteConfirmation = Console.ReadLine().Trim();
+                    }
 
-                        string deleteQuery = "DELETE FROM CharacterTable WHERE characterName = @characterName";
-
-                        using (SqlCommand command = new SqlCommand(deleteQuery, connection))
+                    if (deleteConfirmation == "1")
+                    {
+                        using (SqlConnection connection = new SqlConnection(databaseConnectionString))
                         {
-                            command.Parameters.AddWithValue("@characterName", characterName);
-                            command.ExecuteNonQuery();
+                            connection.Open();
 
-                            Console.WriteLine($"Character '{characterName}' deleted successfully.");
+                            string deleteQuery = "DELETE FROM CharacterTable WHERE characterName = @characterName";
+
+                            using (SqlCommand command = new SqlCommand(deleteQuery, connection))
+                            {
+                                command.Parameters.AddWithValue("@characterName", characterName);
+                                command.ExecuteNonQuery();
+
+                                Console.WriteLine($"Character '{characterName}' deleted successfully.");
+                            }
                         }
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Deletion of character '{characterName}' canceled.");
                     }
                 }
                 else
@@ -651,6 +720,43 @@ namespace RPGCharacterCreationGame
             }
         }
 
+        /*public void DeleteCharacter()
+         {
+             try
+             {
+                 Console.Write("Enter the number of the character you want to delete: ");
+                 int characterNumber = int.Parse(Console.ReadLine());
+
+                 string characterName = GetCharacterNameByNumber(characterNumber);
+
+                 if (characterName != null)
+                 {
+                     using (SqlConnection connection = new SqlConnection(databaseConnectionString))
+                     {
+                         connection.Open();
+
+                         string deleteQuery = "DELETE FROM CharacterTable WHERE characterName = @characterName";
+
+                         using (SqlCommand command = new SqlCommand(deleteQuery, connection))
+                         {
+                             command.Parameters.AddWithValue("@characterName", characterName);
+                             command.ExecuteNonQuery();
+
+                             Console.WriteLine($"Character '{characterName}' deleted successfully.");
+                         }
+                     }
+                 }
+                 else
+                 {
+                     Console.WriteLine("Character not found. Please enter a valid character number.");
+                 }
+             }
+             catch (Exception e)
+             {
+                 Console.WriteLine($"{e.Message}");
+             }
+         }*/
+
         public void LoadingAllCharacters()
         {
             throw new NotImplementedException();
@@ -662,7 +768,7 @@ namespace RPGCharacterCreationGame
     {
         public static void Main(string[] args)
         {
-            Console.WriteLine("Welcome to (Game Name) RPG!");
+            Console.WriteLine("Welcome to Heaven's Door RPG!");
             
             CharacterManager manager = new CharacterManager();
 
@@ -710,7 +816,8 @@ namespace RPGCharacterCreationGame
 
             program.DisplayCharacterSummary(character);
             program.DisplayCharacterSummary(character.characterID);
-            Environment.Exit(0);
+            characterManager.HandleCharacterActions();
+            //Environment.Exit(0);
 
             return character;
         }
